@@ -73,7 +73,8 @@ fun wardrobeApp() {
     ) { innerPadding ->
         navGraph(
             navController = navController,
-            startDestination = Screen.Wardrobe.route
+            startDestination = Screen.Wardrobe.route,
+            paddingValues = innerPadding
         )
     }
 }

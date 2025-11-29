@@ -5,6 +5,7 @@ plugins {
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt.android)
     alias(libs.plugins.spotless)
+    jacoco
 }
 
 hilt {
@@ -26,6 +27,9 @@ android {
     }
 
     buildTypes {
+        debug {
+            enableUnitTestCoverage = true
+        }
         release {
             isMinifyEnabled = false
             proguardFiles(
@@ -80,11 +84,16 @@ dependencies {
     // Gson
     implementation(libs.gson)
 
+    // Accompanist
+    implementation(libs.accompanist.permissions)
+
     // Testing
     testImplementation(libs.junit)
     testImplementation(libs.mockito.core)
     testImplementation(libs.mockito.kotlin)
     testImplementation(libs.androidx.arch.core.testing)
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.robolectric)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))
@@ -103,7 +112,8 @@ spotless {
                 mapOf(
                     "ktlint_standard_no-wildcard-imports" to "disabled",
                     "ktlint_standard_trailing-comma-on-call-site" to "disabled",
-                    "ktlint_standard_trailing-comma-on-declaration-site" to "disabled"
+                    "ktlint_standard_trailing-comma-on-declaration-site" to "disabled",
+                    "ktlint_standard_function-naming" to "disabled"
                 )
             )
         trimTrailingWhitespace()
@@ -114,4 +124,46 @@ spotless {
         target("*.gradle.kts")
         ktlint("1.0.1")
     }
+}
+
+tasks.register<JacocoReport>("jacocoTestReport") {
+    dependsOn("testDebugUnitTest")
+
+    reports {
+        xml.required.set(true)
+        html.required.set(true)
+    }
+
+    val fileFilter =
+        listOf(
+            "**/R.class",
+            "**/R$*.class",
+            "**/BuildConfig.*",
+            "**/Manifest*.*",
+            "**/*Test*.*",
+            "android/**/*.*",
+            "**/*_Hilt*.class",
+            "**/Hilt_*.class",
+            "**/*_Factory.class",
+            "**/*_MembersInjector.class",
+            "**/*Module.*",
+            "**/*Dagger*.*",
+            "**/*_Provide*Factory*.*",
+            "**/*ComposableSingletons*.*"
+        )
+
+    val debugTree =
+        fileTree("${project.buildDir}/tmp/kotlin-classes/debug") {
+            exclude(fileFilter)
+        }
+
+    val mainSrc = "${project.projectDir}/src/main/java"
+
+    sourceDirectories.setFrom(files(mainSrc))
+    classDirectories.setFrom(files(debugTree))
+    executionData.setFrom(
+        fileTree(project.buildDir) {
+            include("**/*.exec", "**/*.ec")
+        }
+    )
 }
