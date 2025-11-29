@@ -9,7 +9,7 @@ import com.example.wardrobegenerator.data.model.Outfit
 import com.example.wardrobegenerator.data.storage.ImageStorageManager
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
@@ -39,7 +39,7 @@ class WardrobeRepositoryTest {
     // ========== Clothing Item Tests ==========
 
     @Test
-    fun `getAllClothingItems returns items from dao`() = runBlocking {
+    fun `getAllClothingItems returns items from dao`() = runTest {
         val items = listOf(
             ClothingItem(id = 1, name = "Shirt", category = ClothingCategory.TOP, imageUri = "/path1"),
             ClothingItem(id = 2, name = "Pants", category = ClothingCategory.BOTTOM, imageUri = "/path2")
@@ -53,7 +53,7 @@ class WardrobeRepositoryTest {
     }
 
     @Test
-    fun `getClothingItemsByCategory filters correctly`() = runBlocking {
+    fun `getClothingItemsByCategory filters correctly`() = runTest {
         val topItems = listOf(
             ClothingItem(id = 1, name = "Shirt", category = ClothingCategory.TOP, imageUri = "/path1")
         )
@@ -66,7 +66,7 @@ class WardrobeRepositoryTest {
     }
 
     @Test
-    fun `addClothingItem saves image and inserts into database`() = runBlocking {
+    fun `addClothingItem saves image and inserts into database`() = runTest {
         val mockUri = mock<Uri>()
         val savedPath = "/saved/path/image.jpg"
         whenever(imageStorageManager.saveImage(any(), any())).thenReturn(savedPath)
@@ -85,7 +85,7 @@ class WardrobeRepositoryTest {
     }
 
     @Test
-    fun `deleteClothingItem removes image and database entry`() = runBlocking {
+    fun `deleteClothingItem removes image and database entry`() = runTest {
         val item = ClothingItem(
             id = 1,
             name = "Old Shirt",
@@ -101,7 +101,7 @@ class WardrobeRepositoryTest {
     }
 
     @Test
-    fun `getClothingItemById returns item when exists`() = runBlocking {
+    fun `getClothingItemById returns item when exists`() = runTest {
         val item = ClothingItem(id = 1, name = "Shirt", category = ClothingCategory.TOP, imageUri = "/path")
         whenever(clothingItemDao.getItemById(1L)).thenReturn(item)
 
@@ -112,7 +112,7 @@ class WardrobeRepositoryTest {
     }
 
     @Test
-    fun `getClothingItemById returns null when not exists`() = runBlocking {
+    fun `getClothingItemById returns null when not exists`() = runTest {
         whenever(clothingItemDao.getItemById(999L)).thenReturn(null)
 
         val result = repository.getClothingItemById(999L)
@@ -123,7 +123,7 @@ class WardrobeRepositoryTest {
     // ========== Outfit Tests ==========
 
     @Test
-    fun `getAllOutfits returns outfits from dao`() = runBlocking {
+    fun `getAllOutfits returns outfits from dao`() = runTest {
         val outfits = listOf(
             Outfit(id = 1, name = "Casual", itemIds = listOf(1L, 2L)),
             Outfit(id = 2, name = "Formal", itemIds = listOf(3L, 4L))
@@ -137,7 +137,7 @@ class WardrobeRepositoryTest {
     }
 
     @Test
-    fun `saveOutfit creates new outfit`() = runBlocking {
+    fun `saveOutfit creates new outfit`() = runTest {
         val itemIds = listOf(1L, 2L, 3L)
         whenever(outfitDao.insertOutfit(any())).thenReturn(1L)
 
@@ -148,7 +148,7 @@ class WardrobeRepositoryTest {
     }
 
     @Test
-    fun `toggleOutfitFavorite changes favorite status`() = runBlocking {
+    fun `toggleOutfitFavorite changes favorite status`() = runTest {
         val outfit = Outfit(id = 1, name = "Test", itemIds = listOf(1L), isFavorite = false)
 
         repository.toggleOutfitFavorite(outfit)
@@ -157,7 +157,7 @@ class WardrobeRepositoryTest {
     }
 
     @Test
-    fun `getFavoriteOutfits returns only favorites`() = runBlocking {
+    fun `getFavoriteOutfits returns only favorites`() = runTest {
         val favorites = listOf(
             Outfit(id = 1, name = "Favorite", itemIds = listOf(1L), isFavorite = true)
         )
@@ -172,7 +172,7 @@ class WardrobeRepositoryTest {
     // ========== Storage Tests ==========
 
     @Test
-    fun `getStorageUsed returns correct size`() = runBlocking {
+    fun `getStorageUsed returns correct size`() = runTest {
         val expectedSize = 1024L * 1024L * 5L // 5 MB
         whenever(imageStorageManager.getStorageUsed()).thenReturn(expectedSize)
 
