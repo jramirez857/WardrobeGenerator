@@ -17,6 +17,7 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -26,7 +27,7 @@ import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
-import java.io.File
+import com.example.wardrobegenerator.util.CameraTempFileManager
 import java.util.concurrent.Executor
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
@@ -44,7 +45,10 @@ fun CameraScreen(
     val imageCapture = remember { ImageCapture.Builder().build() }
     val cameraSelector = remember { CameraSelector.DEFAULT_BACK_CAMERA }
 
+    // Cleanup old temp files when camera screen is first displayed
     LaunchedEffect(Unit) {
+        CameraTempFileManager.cleanupOldTempFiles(context)
+
         val cameraProvider = context.getCameraProvider()
         cameraProvider.unbindAll()
 
@@ -58,6 +62,13 @@ fun CameraScreen(
             preview,
             imageCapture
         )
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            val cameraProvider = ProcessCameraProvider.getInstance(context)
+            cameraProvider.get().unbindAll()
+        }
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -96,10 +107,7 @@ private fun captureImage(
     onImageCaptured: (Uri) -> Unit,
     onError: (Exception) -> Unit
 ) {
-    val photoFile = File(
-        context.cacheDir,
-        "temp_capture_${System.currentTimeMillis()}.jpg"
-    )
+    val (photoFile, photoUri) = CameraTempFileManager.createTempImageFile(context)
 
     val outputOptions = ImageCapture.OutputFileOptions.Builder(photoFile).build()
 
@@ -108,11 +116,11 @@ private fun captureImage(
         executor,
         object : ImageCapture.OnImageSavedCallback {
             override fun onImageSaved(output: ImageCapture.OutputFileResults) {
-                val savedUri = Uri.fromFile(photoFile)
-                onImageCaptured(savedUri)
+                onImageCaptured(photoUri)
             }
 
             override fun onError(exception: ImageCaptureException) {
+                CameraTempFileManager.deleteTempFile(photoFile)
                 onError(exception)
             }
         }
